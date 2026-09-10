@@ -555,12 +555,12 @@
 
     .a4-sheet-card {
       width: 595px; /* A4 aspect ratio 1 : 1.414 */
-      height: 842px;
+      min-height: 842px;
+      height: auto;
       background: #ffffff;
       border-radius: 8px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
       position: relative;
-      overflow: hidden;
       padding: 20px;
       color: #333;
       margin-bottom: 2rem;
@@ -1210,10 +1210,7 @@
 
     // Render single Memory Orb onto a given target canvas
     function drawMemoryOrbToCanvas(targetCanvas, photoObj) {
-      if (!photoObj || !photoObj.img) return;
-      const imgW = photoObj.img.naturalWidth || photoObj.img.width || 0;
-      const imgH = photoObj.img.naturalHeight || photoObj.img.height || 0;
-      if (imgW === 0 || imgH === 0) return;
+      if (!photoObj) return;
 
       try {
         const tCtx = targetCanvas.getContext("2d");
@@ -1248,51 +1245,63 @@
         tCtx.clip();
 
         const innerDim = innerR * 2;
+        const hasImg = photoObj.img && (photoObj.img.naturalWidth || photoObj.img.width);
+        const imgW = hasImg ? (photoObj.img.naturalWidth || photoObj.img.width) : 1200;
+        const imgH = hasImg ? (photoObj.img.naturalHeight || photoObj.img.height) : 800;
 
-        if (photoObj.fitMode === 'full') {
-          // Full Width Mode with Blurred Background
-          const bgCanvas = document.createElement("canvas");
-          bgCanvas.width = innerDim;
-          bgCanvas.height = innerDim;
-          const bgCtx = bgCanvas.getContext("2d");
+        if (hasImg) {
+          if (photoObj.fitMode === 'full') {
+            // Full Width Mode with Blurred Background
+            const bgCanvas = document.createElement("canvas");
+            bgCanvas.width = innerDim;
+            bgCanvas.height = innerDim;
+            const bgCtx = bgCanvas.getContext("2d");
 
-          const bgScale = Math.max(innerDim / imgW, innerDim / imgH);
-          const bgW = imgW * bgScale;
-          const bgH = imgH * bgScale;
+            const bgScale = Math.max(innerDim / imgW, innerDim / imgH);
+            const bgW = imgW * bgScale;
+            const bgH = imgH * bgScale;
 
-          try {
-            bgCtx.filter = `blur(${photoObj.blur || 25}px)`;
-          } catch(e) {}
+            try {
+              bgCtx.filter = `blur(${photoObj.blur || 25}px)`;
+            } catch(e) {}
 
-          bgCtx.drawImage(photoObj.img, (innerDim - bgW)/2 + (photoObj.panX || 0), (innerDim - bgH)/2 + (photoObj.panY || 0), bgW, bgH);
+            bgCtx.drawImage(photoObj.img, (innerDim - bgW)/2 + (photoObj.panX || 0), (innerDim - bgH)/2 + (photoObj.panY || 0), bgW, bgH);
 
-          tCtx.drawImage(bgCanvas, center - innerR, center - innerR);
+            tCtx.drawImage(bgCanvas, center - innerR, center - innerR);
 
-          // Foreground Photo
-          const diag = Math.sqrt(imgW * imgW + imgH * imgH);
-          const fitScale = (innerDim * 0.95 * (photoObj.zoom || 1.0)) / diag;
-          const fw = imgW * fitScale;
-          const fh = imgH * fitScale;
+            // Foreground Photo
+            const diag = Math.sqrt(imgW * imgW + imgH * imgH);
+            const fitScale = (innerDim * 0.95 * (photoObj.zoom || 1.0)) / diag;
+            const fw = imgW * fitScale;
+            const fh = imgH * fitScale;
 
-          const fx = center - fw / 2 + (photoObj.panX || 0);
-          const fy = center - fh / 2 + (photoObj.panY || 0);
+            const fx = center - fw / 2 + (photoObj.panX || 0);
+            const fy = center - fh / 2 + (photoObj.panY || 0);
 
-          tCtx.save();
-          tCtx.shadowColor = "rgba(0,0,0,0.5)";
-          tCtx.shadowBlur = 20;
-          tCtx.drawImage(photoObj.img, fx, fy, fw, fh);
-          tCtx.restore();
+            tCtx.save();
+            tCtx.shadowColor = "rgba(0,0,0,0.5)";
+            tCtx.shadowBlur = 20;
+            tCtx.drawImage(photoObj.img, fx, fy, fw, fh);
+            tCtx.restore();
 
+          } else {
+            // Direct Crop Mode
+            const scale = Math.max(innerDim / imgW, innerDim / imgH) * (photoObj.zoom || 1.0);
+            const sw = imgW * scale;
+            const sh = imgH * scale;
+
+            const sx = center - sw / 2 + (photoObj.panX || 0);
+            const sy = center - sh / 2 + (photoObj.panY || 0);
+
+            tCtx.drawImage(photoObj.img, sx, sy, sw, sh);
+          }
         } else {
-          // Direct Crop Mode
-          const scale = Math.max(innerDim / imgW, innerDim / imgH) * (photoObj.zoom || 1.0);
-          const sw = imgW * scale;
-          const sh = imgH * scale;
-
-          const sx = center - sw / 2 + (photoObj.panX || 0);
-          const sy = center - sh / 2 + (photoObj.panY || 0);
-
-          tCtx.drawImage(photoObj.img, sx, sy, sw, sh);
+          // Fallback aura gradient placeholder
+          const pGrad = tCtx.createRadialGradient(center, center, 0, center, center, innerR);
+          pGrad.addColorStop(0, pal.colors.aura[1]);
+          pGrad.addColorStop(1, pal.colors.aura[3]);
+          tCtx.fillStyle = pGrad;
+          tCtx.fillRect(center - innerR, center - innerR, innerDim, innerDim);
         }
 
         tCtx.restore();
