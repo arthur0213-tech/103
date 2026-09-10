@@ -1210,130 +1210,142 @@
 
     // Render single Memory Orb onto a given target canvas
     function drawMemoryOrbToCanvas(targetCanvas, photoObj) {
-      const tCtx = targetCanvas.getContext("2d");
-      const canvasDim = Math.round(photoObj.orbSizeCm * 118.11); // 300 DPI
-      targetCanvas.width = canvasDim;
-      targetCanvas.height = canvasDim;
+      if (!photoObj || !photoObj.img) return;
+      const imgW = photoObj.img.naturalWidth || photoObj.img.width || 0;
+      const imgH = photoObj.img.naturalHeight || photoObj.img.height || 0;
+      if (imgW === 0 || imgH === 0) return;
 
-      tCtx.clearRect(0, 0, canvasDim, canvasDim);
+      try {
+        const tCtx = targetCanvas.getContext("2d");
+        const canvasDim = Math.round((photoObj.orbSizeCm || 13) * 118.11); // 300 DPI
+        targetCanvas.width = canvasDim;
+        targetCanvas.height = canvasDim;
 
-      const center = canvasDim / 2;
-      const outerR = canvasDim / 2 - 10;
-      const innerR = outerR * photoObj.photoRatio;
-      const pal = EMOTION_PALETTES[photoObj.emotion];
+        tCtx.clearRect(0, 0, canvasDim, canvasDim);
 
-      // 1. Render Outer Glowing Emotion Aura
-      const auraGrad = tCtx.createRadialGradient(center, center, innerR * 0.8, center, center, outerR * 1.05);
-      auraGrad.addColorStop(0, pal.colors.aura[0]);
-      auraGrad.addColorStop(0.3, pal.colors.aura[1]);
-      auraGrad.addColorStop(0.6, pal.colors.aura[2]);
-      auraGrad.addColorStop(0.85, pal.colors.aura[3]);
-      auraGrad.addColorStop(1.0, "rgba(0,0,0,0)");
+        const center = canvasDim / 2;
+        const outerR = canvasDim / 2 - 10;
+        const innerR = outerR * (photoObj.photoRatio || 0.923);
+        const pal = EMOTION_PALETTES[photoObj.emotion || "joy"] || EMOTION_PALETTES["joy"];
 
-      tCtx.fillStyle = auraGrad;
-      tCtx.beginPath();
-      tCtx.arc(center, center, outerR * 1.05, 0, Math.PI * 2);
-      tCtx.fill();
+        // 1. Render Outer Glowing Emotion Aura
+        const auraGrad = tCtx.createRadialGradient(center, center, innerR * 0.8, center, center, outerR * 1.05);
+        auraGrad.addColorStop(0, pal.colors.aura[0]);
+        auraGrad.addColorStop(0.3, pal.colors.aura[1]);
+        auraGrad.addColorStop(0.6, pal.colors.aura[2]);
+        auraGrad.addColorStop(0.85, pal.colors.aura[3]);
+        auraGrad.addColorStop(1.0, "rgba(0,0,0,0)");
 
-      // 2. Render Inner Photo Aperture
-      tCtx.save();
-      tCtx.beginPath();
-      tCtx.arc(center, center, innerR, 0, Math.PI * 2);
-      tCtx.clip();
+        tCtx.fillStyle = auraGrad;
+        tCtx.beginPath();
+        tCtx.arc(center, center, outerR * 1.05, 0, Math.PI * 2);
+        tCtx.fill();
 
-      const innerDim = innerR * 2;
-
-      if (photoObj.fitMode === 'full') {
-        // Full Width Mode with Blurred Background
-        const bgCanvas = document.createElement("canvas");
-        bgCanvas.width = innerDim;
-        bgCanvas.height = innerDim;
-        const bgCtx = bgCanvas.getContext("2d");
-
-        const bgScale = Math.max(innerDim / photoObj.img.width, innerDim / photoObj.img.height);
-        const bgW = photoObj.img.width * bgScale;
-        const bgH = photoObj.img.height * bgScale;
-
-        bgCtx.filter = `blur(${photoObj.blur}px)`;
-        bgCtx.drawImage(photoObj.img, (innerDim - bgW)/2 + photoObj.panX, (innerDim - bgH)/2 + photoObj.panY, bgW, bgH);
-
-        tCtx.drawImage(bgCanvas, center - innerR, center - innerR);
-
-        // Foreground Photo
-        const diag = Math.sqrt(photoObj.img.width * photoObj.img.width + photoObj.img.height * photoObj.img.height);
-        const fitScale = (innerDim * 0.95 * photoObj.zoom) / diag;
-        const fw = photoObj.img.width * fitScale;
-        const fh = photoObj.img.height * fitScale;
-
-        const fx = center - fw / 2 + photoObj.panX;
-        const fy = center - fh / 2 + photoObj.panY;
-
+        // 2. Render Inner Photo Aperture
         tCtx.save();
-        tCtx.shadowColor = "rgba(0,0,0,0.5)";
-        tCtx.shadowBlur = 20;
-        tCtx.drawImage(photoObj.img, fx, fy, fw, fh);
+        tCtx.beginPath();
+        tCtx.arc(center, center, innerR, 0, Math.PI * 2);
+        tCtx.clip();
+
+        const innerDim = innerR * 2;
+
+        if (photoObj.fitMode === 'full') {
+          // Full Width Mode with Blurred Background
+          const bgCanvas = document.createElement("canvas");
+          bgCanvas.width = innerDim;
+          bgCanvas.height = innerDim;
+          const bgCtx = bgCanvas.getContext("2d");
+
+          const bgScale = Math.max(innerDim / imgW, innerDim / imgH);
+          const bgW = imgW * bgScale;
+          const bgH = imgH * bgScale;
+
+          try {
+            bgCtx.filter = `blur(${photoObj.blur || 25}px)`;
+          } catch(e) {}
+
+          bgCtx.drawImage(photoObj.img, (innerDim - bgW)/2 + (photoObj.panX || 0), (innerDim - bgH)/2 + (photoObj.panY || 0), bgW, bgH);
+
+          tCtx.drawImage(bgCanvas, center - innerR, center - innerR);
+
+          // Foreground Photo
+          const diag = Math.sqrt(imgW * imgW + imgH * imgH);
+          const fitScale = (innerDim * 0.95 * (photoObj.zoom || 1.0)) / diag;
+          const fw = imgW * fitScale;
+          const fh = imgH * fitScale;
+
+          const fx = center - fw / 2 + (photoObj.panX || 0);
+          const fy = center - fh / 2 + (photoObj.panY || 0);
+
+          tCtx.save();
+          tCtx.shadowColor = "rgba(0,0,0,0.5)";
+          tCtx.shadowBlur = 20;
+          tCtx.drawImage(photoObj.img, fx, fy, fw, fh);
+          tCtx.restore();
+
+        } else {
+          // Direct Crop Mode
+          const scale = Math.max(innerDim / imgW, innerDim / imgH) * (photoObj.zoom || 1.0);
+          const sw = imgW * scale;
+          const sh = imgH * scale;
+
+          const sx = center - sw / 2 + (photoObj.panX || 0);
+          const sy = center - sh / 2 + (photoObj.panY || 0);
+
+          tCtx.drawImage(photoObj.img, sx, sy, sw, sh);
+        }
+
         tCtx.restore();
 
-      } else {
-        // Direct Crop Mode
-        const scale = Math.max(innerDim / photoObj.img.width, innerDim / photoObj.img.height) * photoObj.zoom;
-        const sw = photoObj.img.width * scale;
-        const sh = photoObj.img.height * scale;
+        // 3. Render 3D Glass Shell & Specular Reflection
+        const ringGrad = tCtx.createRadialGradient(center, center, innerR * 0.95, center, center, outerR);
+        ringGrad.addColorStop(0, "rgba(255,255,255,0)");
+        ringGrad.addColorStop(0.5, pal.colors.glass);
+        ringGrad.addColorStop(0.85, pal.colors.shell[1]);
+        ringGrad.addColorStop(1.0, pal.colors.shell[3]);
 
-        const sx = center - sw / 2 + photoObj.panX;
-        const sy = center - sh / 2 + photoObj.panY;
+        tCtx.lineWidth = outerR - innerR;
+        tCtx.strokeStyle = ringGrad;
+        tCtx.beginPath();
+        tCtx.arc(center, center, (innerR + outerR)/2, 0, Math.PI * 2);
+        tCtx.stroke();
 
-        tCtx.drawImage(photoObj.img, sx, sy, sw, sh);
+        // Top Crescent Highlight
+        const highlightGrad = tCtx.createRadialGradient(
+          center, center - outerR * 0.7, 2,
+          center, center - outerR * 0.7, outerR * 0.5
+        );
+        highlightGrad.addColorStop(0, "rgba(255, 255, 255, 0.45)");
+        highlightGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.15)");
+        highlightGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+        tCtx.fillStyle = highlightGrad;
+        tCtx.beginPath();
+        tCtx.ellipse(center, center - outerR * 0.65, outerR * 0.45, outerR * 0.18, 0, 0, Math.PI * 2);
+        tCtx.fill();
+
+        // Bottom Glass Reflection
+        const bottomGrad = tCtx.createRadialGradient(
+          center, center + outerR * 0.75, 2,
+          center, center + outerR * 0.75, outerR * 0.4
+        );
+        bottomGrad.addColorStop(0, pal.colors.glass);
+        bottomGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+        tCtx.fillStyle = bottomGrad;
+        tCtx.beginPath();
+        tCtx.ellipse(center, center + outerR * 0.7, outerR * 0.4, outerR * 0.15, 0, 0, Math.PI * 2);
+        tCtx.fill();
+
+        // Outer Fine Rim
+        tCtx.lineWidth = 3;
+        tCtx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+        tCtx.beginPath();
+        tCtx.arc(center, center, outerR, 0, Math.PI * 2);
+        tCtx.stroke();
+      } catch (err) {
+        console.error("Error drawing memory orb:", err);
       }
-
-      tCtx.restore();
-
-      // 3. Render 3D Glass Shell & Specular Reflection
-      const ringGrad = tCtx.createRadialGradient(center, center, innerR * 0.95, center, center, outerR);
-      ringGrad.addColorStop(0, "rgba(255,255,255,0)");
-      ringGrad.addColorStop(0.5, pal.colors.glass);
-      ringGrad.addColorStop(0.85, pal.colors.shell[1]);
-      ringGrad.addColorStop(1.0, pal.colors.shell[3]);
-
-      tCtx.lineWidth = outerR - innerR;
-      tCtx.strokeStyle = ringGrad;
-      tCtx.beginPath();
-      tCtx.arc(center, center, (innerR + outerR)/2, 0, Math.PI * 2);
-      tCtx.stroke();
-
-      // Top Crescent Highlight
-      const highlightGrad = tCtx.createRadialGradient(
-        center, center - outerR * 0.7, 2,
-        center, center - outerR * 0.7, outerR * 0.5
-      );
-      highlightGrad.addColorStop(0, "rgba(255, 255, 255, 0.45)");
-      highlightGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.15)");
-      highlightGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-
-      tCtx.fillStyle = highlightGrad;
-      tCtx.beginPath();
-      tCtx.ellipse(center, center - outerR * 0.65, outerR * 0.45, outerR * 0.18, 0, 0, Math.PI * 2);
-      tCtx.fill();
-
-      // Bottom Glass Reflection
-      const bottomGrad = tCtx.createRadialGradient(
-        center, center + outerR * 0.75, 2,
-        center, center + outerR * 0.75, outerR * 0.4
-      );
-      bottomGrad.addColorStop(0, pal.colors.glass);
-      bottomGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
-
-      tCtx.fillStyle = bottomGrad;
-      tCtx.beginPath();
-      tCtx.ellipse(center, center + outerR * 0.7, outerR * 0.4, outerR * 0.15, 0, 0, Math.PI * 2);
-      tCtx.fill();
-
-      // Outer Fine Rim
-      tCtx.lineWidth = 3;
-      tCtx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-      tCtx.beginPath();
-      tCtx.arc(center, center, outerR, 0, Math.PI * 2);
-      tCtx.stroke();
     }
 
     function renderActiveOrb() {
