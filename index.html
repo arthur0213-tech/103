@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>腦筋急轉彎 3D 記憶球生成器 | Inside Out Memory Orb Studio</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #0f111a;
+      --panel-bg: rgba(22, 26, 42, 0.75);
+      --panel-border: rgba(255, 255, 255, 0.12);
+      --text-main: #f0f4f8;
+      --text-sub: #94a3b8;
+      --accent-color: #ffd700;
+      --font-family: 'Noto Sans TC', 'Outfit', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(255, 215, 0, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(14, 165, 233, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.08) 0%, transparent 60%);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      padding: 1.25rem 2rem;
+      background: rgba(15, 17, 26, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-orb {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fff 0%, #ffd700 40%, #ff8c00 70%, #b8860b 100%);
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.6), inset 0 -2px 6px rgba(0,0,0,0.4);
+      animation: orbGlow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes orbGlow {
+      0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); transform: scale(1); }
+      100% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.9); transform: scale(1.05); }
+    }
+
+    .logo-title {
+      font-size: 1.35rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffffff 0%, #ffd700 50%, #ffab00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.5px;
+    }
+
+    .subtitle-tag {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      margin-left: 0.5rem;
+    }
+
+    /* Main Container Layout */
+    .app-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+      padding: 1.5rem 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Control Panel */
+    .control-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+
+      /* Scrollbar */
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.2) transparent;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.5rem;
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed rgba(255, 215, 0, 0.4);
+      background: rgba(255, 215, 0, 0.03);
+      border-radius: 16px;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: #ffd700;
+      background: rgba(255, 215, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .upload-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .upload-text {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    .upload-hint {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    /* Emotion Grid */
+    .emotion-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+    }
+
+    .emotion-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.6rem 0.4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .emotion-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .emotion-card.active {
+      border-color: var(--theme-color, #ffd700);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 15px var(--glow-color, rgba(255,215,0,0.4));
+    }
+
+    .emotion-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--swatch-bg);
+      box-shadow: inset 0 -2px 4px rgba(0,0,0,0.4), 0 0 8px var(--glow-color);
+    }
+
+    .emotion-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .emotion-sub {
+      font-size: 0.65rem;
+      color: #94a3b8;
+    }
+
+    /* Controls Group */
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .val-badge {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: #ffd700;
+      background: rgba(255, 215, 0, 0.1);
+      padding: 0.1rem 0.5rem;
+      border-radius: 8px;
+    }
+
+    .preset-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .btn-preset {
+      flex: 1;
+      padding: 0.4rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-preset:hover, .btn-preset.active {
+      background: rgba(255, 215, 0, 0.15);
+      border-color: #ffd700;
+      color: #ffd700;
+    }
+
+    /* Input Sliders */
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffd700;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+      cursor: pointer;
+    }
+
+    /* Segmented Radio Controls */
+    .segmented-control {
+      display: flex;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 3px;
+      border-radius: 10px;
+      gap: 3px;
+    }
+
+    .segmented-btn {
+      flex: 1;
+      padding: 0.45rem;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #94a3b8;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .segmented-btn.active {
+      background: rgba(255, 215, 0, 0.2);
+      color: #ffd700;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Preview Canvas Area */
+    .preview-stage {
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-height: 520px;
+      width: 100%;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      width: 100%;
+      max-width: 500px;
+      aspect-ratio: 1 / 1;
+    }
+
+    #orbCanvas {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: 480px;
+      max-height: 480px;
+      aspect-ratio: 1 / 1 !important;
+      object-fit: contain !important;
+      filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.6));
+    }
+
+    /* Action Buttons */
+    .action-bar {
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 1.5rem;
+    }
+
+    .btn-action {
+      flex: 1;
+      padding: 0.85rem 1.25rem;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: all 0.25s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ffd700 0%, #ff9100 100%);
+      color: #000;
+      box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    /* Spec Info Cards */
+    .spec-info-bar {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.6rem 1.2rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .spec-item {
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    .spec-item span {
+      color: #ffd700;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-orb"></div>
+      <div>
+        <span class="logo-title">Inside Out 記憶球生成器</span>
+        <span class="subtitle-tag">3D 水晶記憶球工作室</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <div class="app-container">
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+
+      <!-- 1. Photo Upload -->
+      <div class="control-group">
+        <div class="section-title">📷 1. 選擇照片</div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+          <div class="upload-icon">🖼️</div>
+          <div class="upload-text">點擊或拖曳照片至此處</div>
+          <div class="upload-hint">支援 JPG / PNG / WEBP 格式</div>
+          <input type="file" id="fileInput" accept="image/*">
+        </div>
+      </div>
+
+      <!-- 2. Emotion Color Palette -->
+      <div class="control-group">
+        <div class="section-title">🎨 2. 腦筋急轉彎情緒色彩</div>
+        <div class="emotion-grid" id="emotionGrid">
+          <!-- Emotion cards generated dynamically -->
+        </div>
+      </div>
+
+      <!-- 3. Orb Specifications -->
+      <div class="control-group">
+        <div class="section-title">📐 3. 記憶球與相片尺寸</div>
+        
+        <!-- Outer Diameter -->
+        <div class="label-row">
+          <span>記憶球直徑 (外框)</span>
+          <span class="val-badge" id="valOrbSize">13.0 cm</span>
+        </div>
+        <div class="preset-buttons">
+          <button class="btn-preset" onclick="setOrbPreset(7)">7 cm (個人)</button>
+          <button class="btn-preset active" onclick="setOrbPreset(13)">13 cm (合照)</button>
+          <button class="btn-preset" onclick="setOrbPreset(14)">14 cm (特大)</button>
+        </div>
+        <input type="range" id="inputOrbSize" min="3" max="20" step="0.5" value="13" oninput="updateOrbSize(this.value)">
+
+        <!-- Inner Photo Size -->
+        <div class="label-row" style="margin-top: 0.6rem;">
+          <span>內層相片開口比例</span>
+          <span class="val-badge" id="valPhotoRatio">92.3% (12 cm)</span>
+        </div>
+        <div class="preset-buttons">
+          <button class="btn-preset" onclick="setPhotoRatioPreset(0.75)">75.0% (5.25cm)</button>
+          <button class="btn-preset active" onclick="setPhotoRatioPreset(0.923)">92.3% (12.0cm)</button>
+        </div>
+        <input type="range" id="inputPhotoRatio" min="0.50" max="0.95" step="0.01" value="0.923" oninput="updatePhotoRatio(this.value)">
+      </div>
+
+      <!-- 4. Layout Mode & Adjustments -->
+      <div class="control-group">
+        <div class="section-title">🖼️ 4. 相片模式與位置微調</div>
+
+        <div class="segmented-control">
+          <div class="segmented-btn active" id="btnModeFull" onclick="setFitMode('full')">🌟 100%全景無裁切</div>
+          <div class="segmented-btn" id="btnModeCrop" onclick="setFitMode('crop')">👤 圓形特寫裁切</div>
+        </div>
+
+        <!-- Zoom Slider -->
+        <div class="label-row" style="margin-top: 0.5rem;">
+          <span>照片縮放 (Zoom)</span>
+          <span class="val-badge" id="valZoom">100%</span>
+        </div>
+        <input type="range" id="inputZoom" min="0.5" max="2.5" step="0.05" value="1.0" oninput="updateRender()">
+
+        <!-- Pan X / Y -->
+        <div class="label-row">
+          <span>水平位置 (Pan X)</span>
+          <span class="val-badge" id="valPanX">0 px</span>
+        </div>
+        <input type="range" id="inputPanX" min="-200" max="200" step="2" value="0" oninput="updateRender()">
+
+        <div class="label-row">
+          <span>垂直位置 (Pan Y)</span>
+          <span class="val-badge" id="valPanY">0 px</span>
+        </div>
+        <input type="range" id="inputPanY" min="-200" max="200" step="2" value="0" oninput="updateRender()">
+
+        <!-- Background Blur Radius (For Full Mode) -->
+        <div class="label-row" id="rowBlur">
+          <span>背景柔焦程度 (Blur)</span>
+          <span class="val-badge" id="valBlur">25 px</span>
+        </div>
+        <input type="range" id="inputBlur" min="0" max="60" step="2" value="25" oninput="updateRender()">
+      </div>
+
+    </div>
+
+    <!-- Preview Stage -->
+    <div class="preview-stage">
+      <div class="canvas-wrapper">
+        <canvas id="orbCanvas" width="1535" height="1535"></canvas>
+      </div>
+
+      <!-- Real-time specs -->
+      <div class="spec-info-bar">
+        <div class="spec-item">記憶球實體直徑: <span id="specOrbCm">13.0 cm</span></div>
+        <div class="spec-item">內部相片直徑: <span id="specPhotoCm">12.0 cm</span></div>
+        <div class="spec-item">印製解析度: <span>300 DPI</span></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-bar">
+        <button class="btn-action btn-primary" onclick="downloadOrb('png')">
+          📥 下載高解析透明記憶球 (PNG)
+        </button>
+        <button class="btn-action btn-secondary" onclick="downloadOrb('jpg')">
+          🖨️ 下載列印專用底圖 (JPG)
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Emotion Palettes Definition
+    const EMOTION_PALETTES = {
+      joy: {
+        name: "樂樂 (Joy)",
+        sub: "金黃熱情",
+        swatch: "radial-gradient(circle, #fff 0%, #ffd700 50%, #ff8c00 100%)",
+        theme: "#ffd700",
+        glow: "rgba(255, 215, 0, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#ffe066", "#ffd700", "#ff8c00", "#b8860b"],
+          shell: ["#ffffff", "#fff3a0", "#ffd700", "#d4af37"],
+          glass: "rgba(255, 235, 120, 0.45)"
+        }
+      },
+      sadness: {
+        name: "憂憂 (Sadness)",
+        sub: "靜謐湛藍",
+        swatch: "radial-gradient(circle, #e0f2fe 0%, #0284c7 50%, #0369a1 100%)",
+        theme: "#38bdf8",
+        glow: "rgba(56, 189, 248, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#bae6fd", "#38bdf8", "#0284c7", "#075985"],
+          shell: ["#ffffff", "#7dd3fc", "#0284c7", "#0369a1"],
+          glass: "rgba(186, 230, 253, 0.45)"
+        }
+      },
+      disgust: {
+        name: "厭厭 (Disgust)",
+        sub: "翡翠翡綠",
+        swatch: "radial-gradient(circle, #dcfce7 0%, #22c55e 50%, #15803d 100%)",
+        theme: "#4ade80",
+        glow: "rgba(74, 222, 128, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#86efac", "#22c55e", "#15803d", "#14532d"],
+          shell: ["#ffffff", "#4ade80", "#16a34a", "#15803d"],
+          glass: "rgba(187, 247, 208, 0.45)"
+        }
+      },
+      anger: {
+        name: "怒怒 (Anger)",
+        sub: "烈火熾紅",
+        swatch: "radial-gradient(circle, #fee2e2 0%, #ef4444 50%, #b91c1c 100%)",
+        theme: "#f87171",
+        glow: "rgba(248, 113, 113, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#fca5a5", "#ef4444", "#dc2626", "#7f1d1d"],
+          shell: ["#ffffff", "#f87171", "#dc2626", "#991b1b"],
+          glass: "rgba(254, 202, 202, 0.45)"
+        }
+      },
+      anxiety: {
+        name: "焦焦 (Anxiety)",
+        sub: "活力鮮橘",
+        swatch: "radial-gradient(circle, #ffedd5 0%, #f97316 50%, #c2410c 100%)",
+        theme: "#fb923c",
+        glow: "rgba(251, 146, 60, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#fed7aa", "#f97316", "#ea580c", "#9a3412"],
+          shell: ["#ffffff", "#fb923c", "#ea580c", "#c2410c"],
+          glass: "rgba(254, 215, 170, 0.45)"
+        }
+      },
+      fear: {
+        name: "阿驚 (Fear)",
+        sub: "神秘夢幻紫",
+        swatch: "radial-gradient(circle, #f3e8ff 0%, #a855f7 50%, #6b21a8 100%)",
+        theme: "#c084fc",
+        glow: "rgba(192, 132, 252, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#e9d5ff", "#a855f7", "#7e22ce", "#581c87"],
+          shell: ["#ffffff", "#c084fc", "#9333ea", "#6b21a8"],
+          glass: "rgba(233, 213, 255, 0.45)"
+        }
+      },
+      embarrassment: {
+        name: "阿羞 (Embarrassment)",
+        sub: "軟萌粉紅",
+        swatch: "radial-gradient(circle, #fce7f3 0%, #ec4899 50%, #9d174d 100%)",
+        theme: "#f472b6",
+        glow: "rgba(244, 114, 182, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#fbcfe8", "#ec4899", "#be185d", "#831843"],
+          shell: ["#ffffff", "#f472b6", "#db2777", "#9d174d"],
+          glass: "rgba(251, 207, 232, 0.45)"
+        }
+      },
+      envy: {
+        name: "慕慕 (Envy)",
+        sub: "晶瑩藍綠",
+        swatch: "radial-gradient(circle, #ccfbf1 0%, #14b8a6 50%, #0f766e 100%)",
+        theme: "#2dd4bf",
+        glow: "rgba(45, 212, 191, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#99f6e4", "#14b8a6", "#0d9488", "#115e59"],
+          shell: ["#ffffff", "#2dd4bf", "#0d9488", "#0f766e"],
+          glass: "rgba(153, 246, 228, 0.45)"
+        }
+      },
+      rainbow: {
+        name: "核心彩虹 (Core)",
+        sub: "七彩記憶",
+        swatch: "conic-gradient(#ffd700, #ff8c00, #ef4444, #ec4899, #a855f7, #38bdf8, #22c55e, #ffd700)",
+        theme: "#ffd700",
+        glow: "rgba(255, 215, 0, 0.6)",
+        colors: {
+          aura: ["#ffffff", "#ffd700", "#ff7b00", "#a855f7", "#0284c7"],
+          shell: ["#ffffff", "#ffd700", "#a855f7", "#0284c7"],
+          glass: "rgba(255, 255, 255, 0.5)"
+        }
+      }
+    };
+
+    // Current State
+    let currentImage = null;
+    let selectedEmotion = "joy";
+    let orbSizeCm = 13.0;
+    let photoRatio = 0.923;
+    let fitMode = "full"; // 'full' or 'crop'
+
+    const canvas = document.getElementById("orbCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // Init UI
+    function initUI() {
+      const grid = document.getElementById("emotionGrid");
+      grid.innerHTML = "";
+
+      Object.keys(EMOTION_PALETTES).forEach(key => {
+        const pal = EMOTION_PALETTES[key];
+        const card = document.createElement("div");
+        card.className = `emotion-card ${key === selectedEmotion ? 'active' : ''}`;
+        card.style.setProperty('--swatch-bg', pal.swatch);
+        card.style.setProperty('--theme-color', pal.theme);
+        card.style.setProperty('--glow-color', pal.glow);
+        card.onclick = () => selectEmotion(key);
+
+        card.innerHTML = `
+          <div class="emotion-swatch"></div>
+          <div class="emotion-name">${pal.name.split(' ')[0]}</div>
+          <div class="emotion-sub">${pal.sub}</div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // Default sample image generator
+      createDefaultSampleImage();
+    }
+
+    function createDefaultSampleImage() {
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = 1200;
+      tempCanvas.height = 800;
+      const tCtx = tempCanvas.getContext("2d");
+
+      // Draw colorful background with 103 class banner
+      const grad = tCtx.createLinearGradient(0, 0, 1200, 800);
+      grad.addColorStop(0, "#1e293b");
+      grad.addColorStop(0.5, "#334155");
+      grad.addColorStop(1, "#0f172a");
+      tCtx.fillStyle = grad;
+      tCtx.fillRect(0, 0, 1200, 800);
+
+      // Draw text
+      tCtx.fillStyle = "#ffd700";
+      tCtx.font = "bold 60px 'Noto Sans TC', sans-serif";
+      tCtx.textAlign = "center";
+      tCtx.fillText("103班 聰勤門 Inside Out 記憶球", 600, 360);
+
+      tCtx.fillStyle = "#94a3b8";
+      tCtx.font = "36px 'Noto Sans TC', sans-serif";
+      tCtx.fillText("請點擊左側「選擇照片」上傳您的個人或合照", 600, 450);
+
+      const img = new Image();
+      img.onload = () => {
+        currentImage = img;
+        updateRender();
+      };
+      img.src = tempCanvas.toDataURL();
+    }
+
+    // File Upload Handler
+    document.getElementById("fileInput").onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            currentImage = img;
+            updateRender();
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    // Drag and drop
+    const dropZone = document.getElementById("uploadZone");
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add("dragover"); };
+    dropZone.ondragleave = () => dropZone.classList.remove("dragover");
+    dropZone.ondrop = (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files.length) {
+        document.getElementById("fileInput").files = e.dataTransfer.files;
+        document.getElementById("fileInput").onchange({ target: { files: e.dataTransfer.files } });
+      }
+    };
+
+    function selectEmotion(key) {
+      selectedEmotion = key;
+      document.querySelectorAll(".emotion-card").forEach(el => el.classList.remove("active"));
+      event.currentTarget.classList.add("active");
+      updateRender();
+    }
+
+    function setOrbPreset(cm) {
+      updateOrbSize(cm);
+      document.getElementById("inputOrbSize").value = cm;
+    }
+
+    function updateOrbSize(val) {
+      orbSizeCm = parseFloat(val);
+      document.getElementById("valOrbSize").innerText = orbSizeCm.toFixed(1) + " cm";
+      document.getElementById("specOrbCm").innerText = orbSizeCm.toFixed(1) + " cm";
+      updateSpecLabels();
+      updateRender();
+    }
+
+    function setPhotoRatioPreset(ratio) {
+      updatePhotoRatio(ratio);
+      document.getElementById("inputPhotoRatio").value = ratio;
+    }
+
+    function updatePhotoRatio(val) {
+      photoRatio = parseFloat(val);
+      const photoCm = (orbSizeCm * photoRatio).toFixed(1);
+      document.getElementById("valPhotoRatio").innerText = (photoRatio * 100).toFixed(1) + `% (${photoCm} cm)`;
+      document.getElementById("specPhotoCm").innerText = photoCm + " cm";
+      updateRender();
+    }
+
+    function updateSpecLabels() {
+      const photoCm = (orbSizeCm * photoRatio).toFixed(1);
+      document.getElementById("valPhotoRatio").innerText = (photoRatio * 100).toFixed(1) + `% (${photoCm} cm)`;
+      document.getElementById("specPhotoCm").innerText = photoCm + " cm";
+    }
+
+    function setFitMode(mode) {
+      fitMode = mode;
+      document.getElementById("btnModeFull").classList.toggle("active", mode === 'full');
+      document.getElementById("btnModeCrop").classList.toggle("active", mode === 'crop');
+      document.getElementById("rowBlur").style.display = mode === 'full' ? 'flex' : 'none';
+      document.getElementById("inputBlur").style.display = mode === 'full' ? 'block' : 'none';
+      updateRender();
+    }
+
+    // Main 3D Memory Orb Rendering Logic
+    function updateRender() {
+      if (!currentImage) return;
+
+      // Update UI Badges
+      const zoomVal = parseFloat(document.getElementById("inputZoom").value);
+      const panXVal = parseInt(document.getElementById("inputPanX").value);
+      const panYVal = parseInt(document.getElementById("inputPanY").value);
+      const blurVal = parseInt(document.getElementById("inputBlur").value);
+
+      document.getElementById("valZoom").innerText = Math.round(zoomVal * 100) + "%";
+      document.getElementById("valPanX").innerText = panXVal + " px";
+      document.getElementById("valPanY").innerText = panYVal + " px";
+      document.getElementById("valBlur").innerText = blurVal + " px";
+
+      // 300 DPI Canvas Resolution calculation
+      const canvasDim = Math.round(orbSizeCm * 118.11); // 118.11 px/cm = 300 DPI
+      canvas.width = canvasDim;
+      canvas.height = canvasDim;
+
+      ctx.clearRect(0, 0, canvasDim, canvasDim);
+
+      const center = canvasDim / 2;
+      const outerR = canvasDim / 2 - 10;
+      const innerR = outerR * photoRatio;
+
+      const pal = EMOTION_PALETTES[selectedEmotion];
+
+      // 1. Render Outer Glowing Emotion Aura
+      const auraGrad = ctx.createRadialGradient(center, center, innerR * 0.8, center, center, outerR * 1.05);
+      auraGrad.addColorStop(0, pal.colors.aura[0]);
+      auraGrad.addColorStop(0.3, pal.colors.aura[1]);
+      auraGrad.addColorStop(0.6, pal.colors.aura[2]);
+      auraGrad.addColorStop(0.85, pal.colors.aura[3]);
+      auraGrad.addColorStop(1.0, "rgba(0,0,0,0)");
+
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(center, center, outerR * 1.05, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. Render Inner Photo Aperture (Circular Clip)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(center, center, innerR, 0, Math.PI * 2);
+      ctx.clip();
+
+      const innerDim = innerR * 2;
+
+      if (fitMode === 'full') {
+        // --- 100% Full Width Mode with Blurred Background ---
+        // A. Draw Blurred Background
+        const bgCanvas = document.createElement("canvas");
+        bgCanvas.width = innerDim;
+        bgCanvas.height = innerDim;
+        const bgCtx = bgCanvas.getContext("2d");
+
+        const bgScale = Math.max(innerDim / currentImage.width, innerDim / currentImage.height);
+        const bgW = currentImage.width * bgScale;
+        const bgH = currentImage.height * bgScale;
+
+        bgCtx.filter = `blur(${blurVal}px)`;
+        bgCtx.drawImage(currentImage, (innerDim - bgW)/2 + panXVal, (innerDim - bgH)/2 + panYVal, bgW, bgH);
+
+        ctx.drawImage(bgCanvas, center - innerR, center - innerR);
+
+        // B. Draw 100% Full Width Foreground Photo
+        const diag = Math.sqrt(currentImage.width * currentImage.width + currentImage.height * currentImage.height);
+        const fitScale = (innerDim * 0.95 * zoomVal) / diag;
+        const fw = currentImage.width * fitScale;
+        const fh = currentImage.height * fitScale;
+
+        const fx = center - fw / 2 + panXVal;
+        const fy = center - fh / 2 + panYVal;
+
+        // Draw soft rounded mask for foreground
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.shadowBlur = 20;
+        ctx.drawImage(currentImage, fx, fy, fw, fh);
+        ctx.restore();
+
+      } else {
+        // --- Direct Circular Crop Mode ---
+        const scale = Math.max(innerDim / currentImage.width, innerDim / currentImage.height) * zoomVal;
+        const sw = currentImage.width * scale;
+        const sh = currentImage.height * scale;
+
+        const sx = center - sw / 2 + panXVal;
+        const sy = center - sh / 2 + panYVal;
+
+        ctx.drawImage(currentImage, sx, sy, sw, sh);
+      }
+
+      ctx.restore(); // Exit inner circle clip
+
+      // 3. Render 3D Glass Sphere Shell & Specular Reflections
+      // A. Outer Shell Ring
+      const ringGrad = ctx.createRadialGradient(center, center, innerR * 0.95, center, center, outerR);
+      ringGrad.addColorStop(0, "rgba(255,255,255,0)");
+      ringGrad.addColorStop(0.5, pal.colors.glass);
+      ringGrad.addColorStop(0.85, pal.colors.shell[1]);
+      ringGrad.addColorStop(1.0, pal.colors.shell[3]);
+
+      ctx.lineWidth = outerR - innerR;
+      ctx.strokeStyle = ringGrad;
+      ctx.beginPath();
+      ctx.arc(center, center, (innerR + outerR)/2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // B. Top Subtle Crescent Glass Specular Shine
+      const highlightGrad = ctx.createRadialGradient(
+        center, center - outerR * 0.7, 2,
+        center, center - outerR * 0.7, outerR * 0.5
+      );
+      highlightGrad.addColorStop(0, "rgba(255, 255, 255, 0.45)");
+      highlightGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.15)");
+      highlightGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+      ctx.fillStyle = highlightGrad;
+      ctx.beginPath();
+      ctx.ellipse(center, center - outerR * 0.65, outerR * 0.45, outerR * 0.18, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // C. Bottom Subtle Glass Caustics Reflection
+      const bottomGrad = ctx.createRadialGradient(
+        center, center + outerR * 0.75, 2,
+        center, center + outerR * 0.75, outerR * 0.4
+      );
+      bottomGrad.addColorStop(0, pal.colors.glass);
+      bottomGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+      ctx.fillStyle = bottomGrad;
+      ctx.beginPath();
+      ctx.ellipse(center, center + outerR * 0.7, outerR * 0.4, outerR * 0.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // D. Outer Fine Glass Edge Rim
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.beginPath();
+      ctx.arc(center, center, outerR, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // Download Handler
+    function downloadOrb(format) {
+      const link = document.createElement("a");
+      const filename = `InsideOut_MemoryOrb_${selectedEmotion}_${orbSizeCm}cm.${format}`;
+
+      if (format === 'png') {
+        link.href = canvas.toDataURL("image/png");
+      } else {
+        // Render on white background for JPG
+        const jpgCanvas = document.createElement("canvas");
+        jpgCanvas.width = canvas.width;
+        jpgCanvas.height = canvas.height;
+        const jCtx = jpgCanvas.getContext("2d");
+
+        jCtx.fillStyle = "#ffffff";
+        jCtx.fillRect(0, 0, jpgCanvas.width, jpgCanvas.height);
+        jCtx.drawImage(canvas, 0, 0);
+
+        link.href = jpgCanvas.toDataURL("image/jpeg", 0.95);
+      }
+
+      link.download = filename;
+      link.click();
+    }
+
+    // Initialize on page load
+    window.onload = initUI;
+  </script>
+</body>
+</html>
