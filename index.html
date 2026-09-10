@@ -1413,17 +1413,15 @@
       pages.forEach((pageItems, pageIdx) => {
         const card = document.createElement("div");
         card.className = "a4-sheet-card";
+        card.style.display = "flex";
+        card.style.justifyContent = "center";
+        card.style.alignItems = "center";
 
         const pFirst = pageItems[0].photo;
-        const pageTitle = pFirst.orbSizeCm >= 10.5 ? `${pFirst.orbSizeCm}cm 記憶球 (1頁2顆 極致省紙純圖檔)` : `${pFirst.orbSizeCm}cm 記憶球 (1頁8顆 極致省紙檔)`;
-
-        const headerDiv = document.createElement("div");
-        headerDiv.className = "a4-sheet-header";
-        headerDiv.innerText = `103班 A4 極致省紙列印頁 - 第 ${pageIdx + 1} 頁 (共 ${pages.length} 頁) - ${pageTitle}`;
-
         const gridEl = document.createElement("div");
         gridEl.className = "a4-grid";
         if (pFirst.orbSizeCm >= 8.5) {
+          gridEl.style.display = "flex";
           gridEl.style.flexDirection = "column";
           gridEl.style.alignItems = "center";
           gridEl.style.justifyContent = "center";
@@ -1436,7 +1434,6 @@
           gridEl.style.alignItems = "center";
         }
 
-        card.appendChild(headerDiv);
         card.appendChild(gridEl);
 
         pageItems.forEach(item => {
@@ -1457,14 +1454,6 @@
           imgEl.src = tempC.toDataURL("image/png");
 
           orbDiv.appendChild(imgEl);
-
-          const emoInfo = EMOTION_PALETTES[p.emotion] || EMOTION_PALETTES["joy"];
-          const emoName = emoInfo.name ? emoInfo.name.split(' ')[0] : "樂樂";
-          const labelDiv = document.createElement("div");
-          labelDiv.className = "a4-orb-label";
-          labelDiv.innerText = `#${item.globalIdx} (${emoName}) - ${p.orbSizeCm}cm`;
-          orbDiv.appendChild(labelDiv);
-
           gridEl.appendChild(orbDiv);
         });
 
