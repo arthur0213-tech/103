@@ -1251,7 +1251,7 @@
 
         if (hasImg) {
           if (photoObj.fitMode === 'full') {
-            // Full Width Mode with Blurred Background
+            // Full Width Mode with Translucent Backdrop
             const bgCanvas = document.createElement("canvas");
             bgCanvas.width = innerDim;
             bgCanvas.height = innerDim;
@@ -1261,11 +1261,9 @@
             const bgW = imgW * bgScale;
             const bgH = imgH * bgScale;
 
-            try {
-              bgCtx.filter = `blur(${photoObj.blur || 25}px)`;
-            } catch(e) {}
-
+            bgCtx.globalAlpha = 0.45;
             bgCtx.drawImage(photoObj.img, (innerDim - bgW)/2 + (photoObj.panX || 0), (innerDim - bgH)/2 + (photoObj.panY || 0), bgW, bgH);
+            bgCtx.globalAlpha = 1.0;
 
             tCtx.drawImage(bgCanvas, center - innerR, center - innerR);
 
@@ -1278,11 +1276,7 @@
             const fx = center - fw / 2 + (photoObj.panX || 0);
             const fy = center - fh / 2 + (photoObj.panY || 0);
 
-            tCtx.save();
-            tCtx.shadowColor = "rgba(0,0,0,0.5)";
-            tCtx.shadowBlur = 20;
             tCtx.drawImage(photoObj.img, fx, fy, fw, fh);
-            tCtx.restore();
 
           } else {
             // Direct Crop Mode
@@ -1432,10 +1426,10 @@
           itemCanvas.style.width = displayPx + "px";
           itemCanvas.style.height = displayPx + "px";
 
-          drawMemoryOrbToCanvas(itemCanvas, p);
-
           orbDiv.appendChild(itemCanvas);
 
+          const emoInfo = EMOTION_PALETTES[p.emotion] || EMOTION_PALETTES["joy"];
+          const emoName = emoInfo.name ? emoInfo.name.split(' ')[0] : "樂樂";
           const labelDiv = document.createElement("div");
           labelDiv.className = "a4-orb-label";
           labelDiv.innerText = `#${item.globalIdx} (${emoName}) - ${p.orbSizeCm}cm`;
