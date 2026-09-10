@@ -1411,15 +1411,16 @@
         const isGroupPage = pageItems[0].photo.orbSizeCm >= 10;
         const pageTitle = isGroupPage ? `13cm 全班大合照記憶球` : `7cm 個人與親子記憶球`;
 
-        card.innerHTML = `
-          <div class="a4-sheet-header">
-            103班 Inside Out 記憶球教室佈置 A4 列印頁 - 第 ${pageIdx + 1} 頁 (共 ${pages.length} 頁) - ${pageTitle}
-          </div>
-          <div class="a4-grid" id="grid_page_${pageIdx}"></div>
-        `;
-        container.appendChild(card);
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "a4-sheet-header";
+        headerDiv.innerText = `103班 Inside Out 記憶球教室佈置 A4 列印頁 - 第 ${pageIdx + 1} 頁 (共 ${pages.length} 頁) - ${pageTitle}`;
 
-        const gridEl = card.querySelector(`#grid_page_${pageIdx}`);
+        const gridEl = document.createElement("div");
+        gridEl.className = "a4-grid";
+
+        card.appendChild(headerDiv);
+        card.appendChild(gridEl);
+        container.appendChild(card);
 
         pageItems.forEach(item => {
           const p = item.photo;
