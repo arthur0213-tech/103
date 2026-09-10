@@ -1412,9 +1412,12 @@
 
           drawMemoryOrbToCanvas(itemCanvas, p);
 
-          const emoName = EMOTION_PALETTES[p.emotion].name.split(' ')[0];
           orbDiv.appendChild(itemCanvas);
-          orbDiv.innerHTML += `<div class="a4-orb-label">#${item.globalIdx} (${emoName}) - ${p.orbSizeCm}cm</div>`;
+
+          const labelDiv = document.createElement("div");
+          labelDiv.className = "a4-orb-label";
+          labelDiv.innerText = `#${item.globalIdx} (${emoName}) - ${p.orbSizeCm}cm`;
+          orbDiv.appendChild(labelDiv);
 
           gridEl.appendChild(orbDiv);
         });
