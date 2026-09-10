@@ -629,6 +629,13 @@
         page-break-after: always;
         padding: 10mm !important;
         margin: 0 !important;
+        box-sizing: border-box !important;
+      }
+      .a4-orb-item img {
+        width: var(--orb-print-cm) !important;
+        height: var(--orb-print-cm) !important;
+        max-width: none !important;
+        max-height: none !important;
       }
     }
   </style>
@@ -1426,10 +1433,12 @@
           drawMemoryOrbToCanvas(tempC, p);
 
           const imgEl = document.createElement("img");
-          const displayPx = p.orbSizeCm >= 10 ? 280 : 210;
-          imgEl.style.width = displayPx + "px";
-          imgEl.style.height = displayPx + "px";
+          // A4 paper is 21.0cm wide. Printable width inside 595px preview card is 555px (26.43 px/cm).
+          const previewPx = Math.round(p.orbSizeCm * 26.43);
+          imgEl.style.width = previewPx + "px";
+          imgEl.style.height = previewPx + "px";
           imgEl.style.borderRadius = "50%";
+          imgEl.style.setProperty("--orb-print-cm", p.orbSizeCm + "cm");
           imgEl.src = tempC.toDataURL("image/png");
 
           orbDiv.appendChild(imgEl);
