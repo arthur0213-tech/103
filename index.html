@@ -1377,7 +1377,7 @@
       }
     }
 
-    // Render A4 Automatic Print Pack Sheets
+    // Render A4 Automatic Print Pack Sheets (Max Paper Saving Mode)
     function renderA4PrintPack() {
       const container = document.getElementById("a4SheetsContainer");
       container.innerHTML = "";
@@ -1387,18 +1387,15 @@
         return;
       }
 
-      // Group photos into A4 pages
-      // Standard A4 packing:
-      // - 7cm ~ 8.5cm: 6 per page (2x3)
-      // - 9cm ~ 10.5cm: 2 per page (1x2)
-      // - >= 11cm (13cm/14cm): 1 per page (1x1) to guarantee 100% 1:1 physical scale without printer shrinking
+      // Group photos into A4 pages for MAX PAPER SAVING:
+      // - 7cm ~ 8.5cm: 8 per page (2x4)
+      // - >= 8.5cm (13cm/14cm): 2 per page (1x2) - 0 gap, pure orbs
       let pages = [];
       let currentPage = [];
 
       function getPageLimit(p) {
-        if (p.orbSizeCm >= 10.5) return 1;
-        if (p.orbSizeCm >= 8.5) return 2;
-        return 6;
+        if (p.orbSizeCm >= 8.5) return 2; // 13cm or 14cm: 2 per page!
+        return 8; // 7cm: 8 per page!
       }
 
       photoList.forEach((p, idx) => {
@@ -1418,18 +1415,25 @@
         card.className = "a4-sheet-card";
 
         const pFirst = pageItems[0].photo;
-        const pageTitle = pFirst.orbSizeCm >= 10.5 ? `${pFirst.orbSizeCm}cm 大合照記憶球 (單頁獨立 1:1 實體尺寸)` : `${pFirst.orbSizeCm}cm 記憶球`;
+        const pageTitle = pFirst.orbSizeCm >= 10.5 ? `${pFirst.orbSizeCm}cm 記憶球 (1頁2顆 極致省紙純圖檔)` : `${pFirst.orbSizeCm}cm 記憶球 (1頁8顆 極致省紙檔)`;
 
         const headerDiv = document.createElement("div");
         headerDiv.className = "a4-sheet-header";
-        headerDiv.innerText = `103班 Inside Out 記憶球教室佈置 A4 列印頁 - 第 ${pageIdx + 1} 頁 (共 ${pages.length} 頁) - ${pageTitle}`;
+        headerDiv.innerText = `103班 A4 極致省紙列印頁 - 第 ${pageIdx + 1} 頁 (共 ${pages.length} 頁) - ${pageTitle}`;
 
         const gridEl = document.createElement("div");
         gridEl.className = "a4-grid";
-        if (pFirst.orbSizeCm >= 10.5) {
+        if (pFirst.orbSizeCm >= 8.5) {
           gridEl.style.flexDirection = "column";
           gridEl.style.alignItems = "center";
-          gridEl.style.marginTop = "20px";
+          gridEl.style.justifyContent = "center";
+          gridEl.style.gap = "0px";
+        } else {
+          gridEl.style.display = "grid";
+          gridEl.style.gridTemplateColumns = "repeat(2, 1fr)";
+          gridEl.style.gap = "0px";
+          gridEl.style.justifyItems = "center";
+          gridEl.style.alignItems = "center";
         }
 
         card.appendChild(headerDiv);
@@ -1445,7 +1449,6 @@
           drawMemoryOrbToCanvas(tempC, p);
 
           const imgEl = document.createElement("img");
-          // A4 paper is 21.0cm wide. Printable width inside 595px preview card is 555px (26.43 px/cm).
           const previewPx = Math.round(p.orbSizeCm * 26.43);
           imgEl.style.width = previewPx + "px";
           imgEl.style.height = previewPx + "px";
@@ -1459,27 +1462,8 @@
           const emoName = emoInfo.name ? emoInfo.name.split(' ')[0] : "樂樂";
           const labelDiv = document.createElement("div");
           labelDiv.className = "a4-orb-label";
-          labelDiv.style.fontSize = "13px";
-          labelDiv.style.fontWeight = "700";
-          labelDiv.style.marginTop = "8px";
-          labelDiv.innerText = `#${item.globalIdx} (${emoName}) - 直徑 ${p.orbSizeCm}cm (照片 ${ (p.orbSizeCm * p.photoRatio).toFixed(1) }cm)`;
+          labelDiv.innerText = `#${item.globalIdx} (${emoName}) - ${p.orbSizeCm}cm`;
           orbDiv.appendChild(labelDiv);
-
-          if (p.orbSizeCm >= 10.5) {
-            // Add 1:1 Physical Scale Ruler Verification Line
-            const rulerDiv = document.createElement("div");
-            rulerDiv.style.marginTop = "25px";
-            rulerDiv.style.textAlign = "center";
-            rulerDiv.style.width = "100%";
-            rulerDiv.innerHTML = `
-              <div style="font-size:11px; color:#666; margin-bottom:4px; font-weight:600;">📏 1:1 實體列印比例尺：列印後用實體尺測量下方線段應剛好為 ${p.orbSizeCm} cm</div>
-              <div style="width: ${previewPx}px; height: 3px; background: #475569; margin: 0 auto; position: relative;">
-                <div style="position: absolute; left: 0; top: -5px; width: 2px; height: 13px; background: #475569;"></div>
-                <div style="position: absolute; right: 0; top: -5px; width: 2px; height: 13px; background: #475569;"></div>
-              </div>
-            `;
-            orbDiv.appendChild(rulerDiv);
-          }
 
           gridEl.appendChild(orbDiv);
         });
